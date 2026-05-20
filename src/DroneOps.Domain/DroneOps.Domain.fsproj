@@ -11,6 +11,7 @@
     <Compile Include="Battery.fs" />
     <Compile Include="Route.fs" />
     <Compile Include="Drone.fs" />
+    <Compile Include="Mission.fs" />
   </ItemGroup>
 
 </Project>
