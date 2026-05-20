@@ -1,13 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Tests.fs" />
+    <Compile Include="RouteEngineTests.fs" />
+    <Compile Include="MovementTests.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit.Xunit2" />
+    <PackageReference Include="FSharp.Core" />
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
@@ -16,6 +17,5 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DroneOps.Domain\DroneOps.Domain.fsproj" />
     <ProjectReference Include="..\..\src\DroneOps.Simulation\DroneOps.Simulation.fsproj" />
-    <ProjectReference Include="..\..\src\DroneOps.Actors\DroneOps.Actors.fsproj" />
   </ItemGroup>
 </Project>

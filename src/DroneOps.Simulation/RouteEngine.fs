@@ -31,7 +31,7 @@ let private reconstructPath (cameFrom: Map<Position, Position>) (start: Position
             | None -> acc
             | Some prev -> loop prev (current :: acc)
 
-    loop target [ target ]
+    loop target []
 
 let private bfs (world: WorldMap) (start: Position) (target: Position) =
     let queue = System.Collections.Generic.Queue<Position>()
