@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="Identifiers.fs" />
     <Compile Include="Position.fs" />
+    <Compile Include="Battery.fs" />
   </ItemGroup>
 
 </Project>
