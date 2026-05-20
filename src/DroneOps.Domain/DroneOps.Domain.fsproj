@@ -12,6 +12,7 @@
     <Compile Include="Route.fs" />
     <Compile Include="Drone.fs" />
     <Compile Include="Mission.fs" />
+    <Compile Include="World.fs" />
   </ItemGroup>
 
 </Project>
