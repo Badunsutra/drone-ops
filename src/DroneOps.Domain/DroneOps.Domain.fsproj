@@ -14,6 +14,7 @@
     <Compile Include="Mission.fs" />
     <Compile Include="World.fs" />
     <Compile Include="Events.fs" />
+    <Compile Include="Dtos.fs" />
   </ItemGroup>
 
 </Project>
