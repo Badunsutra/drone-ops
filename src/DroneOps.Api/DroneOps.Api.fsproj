@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DroneOps.Domain\DroneOps.Domain.fsproj" />
+    <ProjectReference Include="..\DroneOps.Simulation\DroneOps.Simulation.fsproj" />
+    <ProjectReference Include="..\DroneOps.Actors\DroneOps.Actors.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Akka.Hosting" />
+  </ItemGroup>
+</Project>

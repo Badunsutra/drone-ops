@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DroneOps.Actors/DroneOps.Actors.fsproj" />
+    <Project Path="src/DroneOps.Api/DroneOps.Api.fsproj" />
+    <Project Path="src/DroneOps.Domain/DroneOps.Domain.fsproj" />
+    <Project Path="src/DroneOps.Simulation/DroneOps.Simulation.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DroneOps.Tests/DroneOps.Tests.fsproj" />
+  </Folder>
+</Solution>
