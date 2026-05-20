@@ -13,6 +13,7 @@
     <Compile Include="Drone.fs" />
     <Compile Include="Mission.fs" />
     <Compile Include="World.fs" />
+    <Compile Include="Events.fs" />
   </ItemGroup>
 
 </Project>
