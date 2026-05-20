@@ -9,6 +9,7 @@
     <Compile Include="Identifiers.fs" />
     <Compile Include="Position.fs" />
     <Compile Include="Battery.fs" />
+    <Compile Include="Route.fs" />
   </ItemGroup>
 
 </Project>
