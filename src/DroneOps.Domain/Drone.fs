@@ -16,6 +16,7 @@ type DroneFailureReason =
     | ObstacleCollision of position: Position
     | RouteNotFound
     | ManualAbort of operator: OperatorId
+    | InternalError of message: string
 
 // ─── Status ───────────────────────────────────────────────────
 

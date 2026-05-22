@@ -48,6 +48,12 @@ module MissionId =
 
     let fromNumber = makeId Prefix >> Result.map MissionId
     let fromString = validateId pattern Prefix >> Result.map MissionId
+
+    // Генерация через Guid — для HTTP эндпоинтов
+    let generate () =
+        let id = System.Guid.NewGuid().ToString("N")[..7]
+        MissionId $"{Prefix}-{id}"
+
     let value (MissionId id) = id
 
 module ChargingStationId =

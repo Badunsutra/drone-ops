@@ -3,6 +3,7 @@ module DroneOps.Actors.FleetSupervisorActor
 open Akka.Actor
 open Akka.Event
 open DroneOps.Domain.Identifiers
+open DroneOps.Domain.Drone
 open DroneOps.Domain.Events
 open DroneOps.Domain.Drone
 open DroneOps.Domain.World
@@ -13,13 +14,15 @@ type FleetSupervisorActor(world: WorldMap) =
     inherit UntypedActor()
 
     let mutable log = Unchecked.defaultof<ILoggingAdapter>
-    // Реестр дронов: DroneId → IActorRef
     let mutable drones: Map<DroneId, IActorRef> = Map.empty
+    // Дроны остановленные штатно через StopDrone команду
+    let mutable voluntaryStops: Set<DroneId> = Set.empty
+    // Дроны которые сами сообщили о сбое через DroneInternalMessage
+    let mutable selfReported: Set<DroneId> = Set.empty
 
-    // Supervision strategy: Stop on failure.
-    // Default Restart не используем — дрон потеряет маршрут и миссию.
-    // Stop → DroneFailed event → MissionDispatcher reassigns.
     override _.SupervisorStrategy() =
+        // Stop on any failure — не используем Restart чтобы не потерять состояние дрона.
+        // После Stop: Terminated → FleetSupervisor публикует DroneFailed/DroneStopped
         OneForOneStrategy(fun _ -> Directive.Stop) :> SupervisorStrategy
 
     override this.PreStart() =
@@ -32,30 +35,49 @@ type FleetSupervisorActor(world: WorldMap) =
             match cmd with
             | SpawnDrone(droneId, position, battery, config) ->
                 let initialState = DroneState.create droneId position battery config
-                // Дочерний актор получает имя из DroneId — явный path в иерархии:
-                // /user/fleet/drone-001
                 let name = DroneId.value droneId
                 let props = Props.Create<DroneActor>(fun () -> DroneActor(initialState, world))
                 let ref = UntypedActor.Context.ActorOf(props, name)
-                // Наблюдаем за дочерним актором — получим Terminated при остановке
                 UntypedActor.Context.Watch(ref) |> ignore
                 drones <- drones |> Map.add droneId ref
-                log.Info("Spawned drone [{0}] at {1}", DroneId.value droneId, position)
+                log.Info("Spawned drone [{0}] at {1}", name, position)
 
             | StopDrone droneId ->
                 match drones |> Map.tryFind droneId with
                 | None -> log.Warning("StopDrone: drone [{0}] not found", DroneId.value droneId)
-                | Some ref -> ref.Tell(StopDroneCommand)
+                | Some ref ->
+                    voluntaryStops <- voluntaryStops |> Set.add droneId
+                    ref.Tell(StopDroneCommand)
 
-        // Получаем уведомление когда дочерний актор остановился
+        // DroneActor сам обнаружил сбой — уже опубликовал DroneFailed через EventStream
+        | :? DroneInternalMessage as msg ->
+            match msg with
+            | DroneReportedFailure(droneId, _) -> selfReported <- selfReported |> Set.add droneId
+
+        // Дочерний актор остановился
         | :? Terminated as t ->
-            let stopped = drones |> Map.tryFindKey (fun _ ref -> ref = t.ActorRef)
+            let stoppedOpt = drones |> Map.tryFindKey (fun _ ref -> ref = t.ActorRef)
 
-            match stopped with
+            match stoppedOpt with
             | None -> ()
             | Some droneId ->
                 drones <- drones |> Map.remove droneId
-                UntypedActor.Context.System.EventStream.Publish(DroneStopped droneId)
-                log.Info("Drone [{0}] stopped", DroneId.value droneId)
+                voluntaryStops <- voluntaryStops |> Set.remove droneId
+                selfReported <- selfReported |> Set.remove droneId
+
+                if voluntaryStops |> Set.contains droneId then
+                    // Штатная остановка
+                    UntypedActor.Context.System.EventStream.Publish(DroneStopped droneId)
+                    log.Info("Drone [{0}] stopped normally", DroneId.value droneId)
+
+                elif selfReported |> Set.contains droneId then
+                    // Дрон уже опубликовал DroneFailed — дополнительно не публикуем
+                    log.Info("Drone [{0}] terminated after self-reported failure", DroneId.value droneId)
+
+                else
+                    // Необработанное исключение — дрон не успел сообщить о сбое
+                    let reason = InternalError $"Actor terminated unexpectedly"
+                    UntypedActor.Context.System.EventStream.Publish(DroneFailed(droneId, reason))
+                    log.Warning("Drone [{0}] terminated unexpectedly", DroneId.value droneId)
 
         | _ -> this.Unhandled(message)

@@ -4,6 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AkkaHosting.fs" />
+    <Compile Include="SimulationEndpoints.fs" />
+    <Compile Include="MissionEndpoints.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -14,5 +16,6 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Core" />
     <PackageReference Include="Akka.Hosting" />
+    <PackageReference Include="Giraffe" />
   </ItemGroup>
 </Project>

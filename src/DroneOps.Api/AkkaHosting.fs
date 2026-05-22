@@ -14,9 +14,8 @@ open DroneOps.Actors.SimulationClockActor
 open DroneOps.Actors.WorldActor
 open DroneOps.Actors.FleetSupervisorActor
 open DroneOps.Actors.DroneActor
+open DroneOps.Actors.MissionDispatcherActor
 open DroneOps.Actors.Messages
-
-// ─── Initial world ────────────────────────────────────────────
 
 let private buildInitialWorld () =
     let world =
@@ -44,16 +43,12 @@ let private buildInitialWorld () =
     |> WorldMap.addStation station1
     |> WorldMap.addStation station2
 
-// ─── Initial drones ───────────────────────────────────────────
-
 let private defaultDroneConfig =
     { StepsPerTick = 1
       BatteryDrainPerStep = 2
       BatteryChargePerTick = 5
       LowBatteryThreshold = BatteryLevel.unsafeCreate 20
       MaxPayloadKg = None }
-
-// ─── Akka configuration ───────────────────────────────────────
 
 let configureAkka (services: IServiceCollection) =
     services.AddAkka(
@@ -64,25 +59,29 @@ let configureAkka (services: IServiceCollection) =
                 .WithActors(fun system (registry: IActorRegistry) ->
                     let world = buildInitialWorld ()
 
-                    // 1. DeadLetterMonitor — первым, чтобы ловить все dead letters
+                    // 1. DeadLetterMonitor
                     let deadLetterMonitor =
                         system.ActorOf(Props.Create<DeadLetterMonitorActor>(), DeadLetterMonitor)
 
                     registry.Register<DeadLetterMonitorActor>(deadLetterMonitor)
 
-                    // 2. WorldActor — до TelemetryActor и CommandGateway (startup ask)
+                    // 2. WorldActor
                     let worldActor =
                         system.ActorOf(Props.Create<WorldActor>(fun () -> WorldActor(world)), World)
 
                     registry.Register<WorldActor>(worldActor)
 
-                    // 3. SimulationClockActor
+                    // 3. SimulationClock
                     let clockActor =
                         system.ActorOf(Props.Create<SimulationClockActor>(), SimulationClock)
 
                     registry.Register<SimulationClockActor>(clockActor)
 
-                    // 4. FleetSupervisor
+                    // 4. MissionDispatcher
+                    let missionActor = system.ActorOf(Props.Create<MissionDispatcherActor>(), Missions)
+                    registry.Register<MissionDispatcherActor>(missionActor)
+
+                    // 5. FleetSupervisor + дроны
                     let fleetActor =
                         system.ActorOf(
                             Props.Create<FleetSupervisorActor>(fun () -> FleetSupervisorActor(world)),
@@ -91,7 +90,6 @@ let configureAkka (services: IServiceCollection) =
 
                     registry.Register<FleetSupervisorActor>(fleetActor)
 
-                    // 5. Спауним дронов для демо
                     fleetActor.Tell(
                         SpawnDrone(
                             DroneId.fromNumber 1 |> Result.defaultWith failwith,
@@ -110,7 +108,7 @@ let configureAkka (services: IServiceCollection) =
                         )
                     )
 
-                    // 6. Запускаем симуляцию
+                    // 6. Запуск симуляции
                     clockActor.Tell(StartSimulation))
             |> ignore
     )

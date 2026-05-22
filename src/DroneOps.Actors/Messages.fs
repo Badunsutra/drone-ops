@@ -14,16 +14,11 @@ type SimulationClockCommand =
     | ResumeSimulation
     | ChangeSpeed of speed: decimal
 
-// Внутреннее сообщение — актор отправляет себе через scheduler.
-// private в рамках модуля не работает для типов, поэтому используем
-// отдельный тип чтобы отличить от внешних команд.
 type ClockTick = ClockTick
 
 // ─── World ────────────────────────────────────────────────────
 
-type WorldCommand =
-    // Ask-запрос — возвращает WorldMap через Sender.Tell
-    | GetWorldMap
+type WorldCommand = | GetWorldMap
 
 // ─── Fleet ────────────────────────────────────────────────────
 
@@ -31,9 +26,17 @@ type FleetCommand =
     | SpawnDrone of droneId: DroneId * position: Position * battery: BatteryLevel * config: DroneConfig
     | StopDrone of droneId: DroneId
 
+// Internal: DroneActor → FleetSupervisor (parent)
+// Сигнализирует что дрон сам обнаружил и опубликовал свой сбой
+type DroneInternalMessage = DroneReportedFailure of droneId: DroneId * reason: DroneFailureReason
+
 // ─── Drone ────────────────────────────────────────────────────
 
 type DroneCommand =
     | AssignMission of mission: Mission
     | ForceReturnToBase
     | StopDroneCommand
+
+// ─── MissionDispatcher ────────────────────────────────────────
+
+type MissionDispatcherCommand = CreateMission of mission: Mission

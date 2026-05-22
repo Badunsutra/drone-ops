@@ -3,6 +3,7 @@ module DroneOps.Actors.DroneActor
 open Akka.Actor
 open Akka.Event
 open DroneOps.Domain.Identifiers
+open DroneOps.Domain.Position
 open DroneOps.Domain.Battery
 open DroneOps.Domain.Drone
 open DroneOps.Domain.Events
@@ -20,7 +21,17 @@ type DroneActor(initialState: DroneState, world: WorldMap) =
     member private _.Publish(event: DroneEvent) =
         UntypedActor.Context.System.EventStream.Publish(event)
 
-    // ─── Tick handling ────────────────────────────────────────
+    member private this.FailWith(reason: DroneFailureReason) =
+        state <-
+            { state with
+                Status = Failed reason
+                CurrentRoute = None }
+
+        this.Publish(DroneFailed(state.Id, reason))
+        // Сообщаем родителю что уже опубликовали DroneFailed,
+        // чтобы FleetSupervisor не публиковал его повторно при Terminated
+        UntypedActor.Context.Parent.Tell(DroneReportedFailure(state.Id, reason))
+        UntypedActor.Context.Stop(this.Self)
 
     member private this.HandleTick(_tick: SimulationTick) =
         match state.Status with
@@ -47,17 +58,14 @@ type DroneActor(initialState: DroneState, world: WorldMap) =
             | None -> ()
             | Some route ->
                 match moveTick route state.Battery state.Config with
-                | Error _ ->
-                    state <-
-                        { state with
-                            Status = Failed RouteNotFound
-                            CurrentRoute = None }
-
-                    this.Publish(DroneFailed(state.Id, RouteNotFound))
+                | Error reason -> this.FailWith(reason)
 
                 | Ok result ->
+                    // Считаем фактическое количество шагов через расстояние
+                    let actualSteps = Position.manhattanDistance state.Position result.Position
+
                     let newBattery =
-                        BatteryLevel.drain (state.Config.StepsPerTick * state.Config.BatteryDrainPerStep) state.Battery
+                        BatteryLevel.drain (actualSteps * state.Config.BatteryDrainPerStep) state.Battery
 
                     state <-
                         { state with
@@ -104,8 +112,6 @@ type DroneActor(initialState: DroneState, world: WorldMap) =
 
         this.Publish(DroneNeedsCharging(state.Id, state.Position, state.Battery))
 
-    // ─── Mission handling ─────────────────────────────────────
-
     member private this.HandleAssignMission(mission: DroneOps.Domain.Mission.Mission) =
         match planRoute world state.Position mission.Pickup with
         | Error e -> log.Warning("Drone [{0}] cannot plan route: {1}", DroneId.value state.Id, e)
@@ -118,21 +124,17 @@ type DroneActor(initialState: DroneState, world: WorldMap) =
 
             this.Publish(DroneMissionAcknowledged(mission.Id, state.Id))
 
-    // ─── Charging station assignment ──────────────────────────
-
     member private this.HandleChargingEvent(evt: ChargingEvent) =
         match evt with
         | ChargingStationAssigned(droneId, stationId, position) when droneId = state.Id ->
             match planRoute world state.Position position with
-            | Error e -> log.Warning("Drone [{0}] cannot plan route to station: {1}", DroneId.value state.Id, e)
+            | Error e -> log.Warning("Drone [{0}] cannot route to station: {1}", DroneId.value state.Id, e)
             | Ok route ->
                 state <-
                     { state with
                         Status = ReturningToCharge(Some stationId)
                         CurrentRoute = Some route }
         | _ -> ()
-
-    // ─── Lifecycle ────────────────────────────────────────────
 
     override this.PreStart() =
         log <- Logging.GetLogger(UntypedActor.Context)
