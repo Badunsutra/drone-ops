@@ -2,13 +2,14 @@ module Program
 
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
+open DroneOps.Api.AkkaHosting
 
 [<EntryPoint>]
 let main args =
     let builder = WebApplication.CreateBuilder(args)
 
     builder.Services.AddControllers() |> ignore
+    configureAkka builder.Services
 
     let app = builder.Build()
 
