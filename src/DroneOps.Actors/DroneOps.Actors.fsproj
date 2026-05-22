@@ -5,7 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ActorNames.fs" />
+    <Compile Include="Messages.fs" />
     <Compile Include="DeadLetterMonitorActor.fs" />
+    <Compile Include="SimulationClockActor.fs" />
+    <Compile Include="WorldActor.fs" />
+    <Compile Include="DroneActor.fs" />
+    <Compile Include="FleetSupervisorActor.fs" />
   </ItemGroup>
 
   <ItemGroup>
