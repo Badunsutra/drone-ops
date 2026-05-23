@@ -13,6 +13,7 @@
     <Compile Include="FleetSupervisorActor.fs" />
     <Compile Include="ChargingCoordinatorActor.fs" />
     <Compile Include="MissionDispatcherActor.fs" />
+    <Compile Include="TelemetryActor.fs" />
   </ItemGroup>
 
   <ItemGroup>

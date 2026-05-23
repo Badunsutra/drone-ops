@@ -17,6 +17,7 @@ open DroneOps.Actors.DroneActor
 open DroneOps.Actors.MissionDispatcherActor
 open DroneOps.Actors.Messages
 open DroneOps.Actors.ChargingCoordinatorActor
+open DroneOps.Actors.TelemetryActor
 
 let private buildInitialWorld () =
     let world =
@@ -90,7 +91,14 @@ let configureAkka (services: IServiceCollection) =
                             Charging)
                     registry.Register<ChargingCoordinatorActor>(chargingActor)
 
-                    // 6. FleetSupervisor + дроны
+                    // 6. TelemetryActor — 150ms snapshot interval
+                    let telemetryActor =
+                        system.ActorOf(
+                            Props.Create<TelemetryActor>(fun () -> TelemetryActor(150)),
+                            Telemetry)
+                    registry.Register<TelemetryActor>(telemetryActor)
+
+                    // 7. FleetSupervisor + дроны
                     let fleetActor =
                         system.ActorOf(
                             Props.Create<FleetSupervisorActor>(fun () -> FleetSupervisorActor(world)),
