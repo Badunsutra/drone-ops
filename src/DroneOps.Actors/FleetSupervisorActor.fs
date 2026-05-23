@@ -5,7 +5,6 @@ open Akka.Event
 open DroneOps.Domain.Identifiers
 open DroneOps.Domain.Drone
 open DroneOps.Domain.Events
-open DroneOps.Domain.Drone
 open DroneOps.Domain.World
 open DroneOps.Actors.Messages
 open DroneOps.Actors.DroneActor

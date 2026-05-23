@@ -16,6 +16,7 @@ open DroneOps.Actors.FleetSupervisorActor
 open DroneOps.Actors.DroneActor
 open DroneOps.Actors.MissionDispatcherActor
 open DroneOps.Actors.Messages
+open DroneOps.Actors.ChargingCoordinatorActor
 
 let private buildInitialWorld () =
     let world =
@@ -81,7 +82,15 @@ let configureAkka (services: IServiceCollection) =
                     let missionActor = system.ActorOf(Props.Create<MissionDispatcherActor>(), Missions)
                     registry.Register<MissionDispatcherActor>(missionActor)
 
-                    // 5. FleetSupervisor + дроны
+                    // 5. ChargingCoordinator
+                    let chargingActor =
+                        system.ActorOf(
+                            Props.Create<ChargingCoordinatorActor>(fun () ->
+                                ChargingCoordinatorActor(world)),
+                            Charging)
+                    registry.Register<ChargingCoordinatorActor>(chargingActor)
+
+                    // 6. FleetSupervisor + дроны
                     let fleetActor =
                         system.ActorOf(
                             Props.Create<FleetSupervisorActor>(fun () -> FleetSupervisorActor(world)),
