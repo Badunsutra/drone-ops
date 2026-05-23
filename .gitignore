@@ -10,6 +10,11 @@ out/
 !.vscode/tasks.json
 !.vscode/launch.json
 
+# Web project VS Code — нужно сначала разрешить папку, потом файлы
+!src/DroneOps.Web/.vscode/
+!src/DroneOps.Web/.vscode/settings.json
+!src/DroneOps.Web/.vscode/extensions.json
+
 # Rider / VS
 .idea/
 *.user
@@ -30,3 +35,8 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node.js / Web
+node_modules/
+dist/
+src/DroneOps.Web/.vite/

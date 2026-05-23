@@ -5,21 +5,28 @@ open Microsoft.Extensions.DependencyInjection
 open Giraffe
 open DroneOps.Api.AkkaHosting
 open DroneOps.Api.WorldHub
-open DroneOps.Api.SimulationEndpoints
-open DroneOps.Api.MissionEndpoints
 
-// Без RequestErrors.NOT_FOUND — Giraffe вернёт None для неизвестных путей
-// и ASP.NET Core передаст запрос следующему обработчику (SignalR hub)
 let webApp : HttpHandler =
     subRoute "/api" (
         choose [
             DroneOps.Api.SimulationEndpoints.router
             DroneOps.Api.MissionEndpoints.router
+            DroneOps.Api.WorldEndpoints.router
         ])
 
 [<EntryPoint>]
 let main args =
     let builder = WebApplication.CreateBuilder(args)
+
+    builder.Services.AddCors(fun options ->
+        options.AddDefaultPolicy(fun policy ->
+            policy
+                .WithOrigins("http://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()  // Обязательно для SignalR WebSocket
+            |> ignore))
+    |> ignore
 
     builder.Services.AddSignalR() |> ignore
     builder.Services.AddGiraffe() |> ignore
@@ -27,9 +34,10 @@ let main args =
 
     let app = builder.Build()
 
-    app.UseWebSockets()                         |> ignore
-    app.UseGiraffe(webApp)                          // Middleware: /api/*
-    app.MapHub<WorldHub>("/hubs/world")         |> ignore  // Endpoint: SignalR
+    app.UseCors()       |> ignore
+    app.UseWebSockets() |> ignore
+    app.UseGiraffe(webApp)
+    app.MapHub<WorldHub>("/hubs/world") |> ignore
 
     app.Run()
 

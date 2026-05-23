@@ -8,6 +8,7 @@
     <Compile Include="AkkaHosting.fs" />
     <Compile Include="SimulationEndpoints.fs" />
     <Compile Include="MissionEndpoints.fs" />
+    <Compile Include="WorldEndpoints.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
