@@ -3,6 +3,8 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="WorldHub.fs" />
+    <Compile Include="SignalRBridgeActor.fs" />
     <Compile Include="AkkaHosting.fs" />
     <Compile Include="SimulationEndpoints.fs" />
     <Compile Include="MissionEndpoints.fs" />
